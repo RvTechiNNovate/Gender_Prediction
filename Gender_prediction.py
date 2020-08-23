@@ -30,8 +30,8 @@ lbl_head=Label(root,bg='orange',text='Gender Prediction',font=('verdna',45,'bold
 lbl_head.pack(side='top',anchor='c')
 
 
-# def use_video():
-
+def use_video():
+    print("wait for it")
 
 def use_image(frm):
     h=3
@@ -52,12 +52,41 @@ def use_image(frm):
     detect_btn.place(x=700,y=200)
 
 
-def use_video():
-    print("wait for it")
-
-
 def use_webcam():
-    print("wait for it")
+
+        faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+
+        video_capture = cv2.VideoCapture(0)
+
+        while True:
+            # Capture frame-by-frame
+            ret, frame = video_capture.read()
+
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faceDetect=cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+            faces = faceDetect.detectMultiScale(gray)
+            for (x,y,w,h) in faces:
+                faces=gray[y:y+h,x:x+w]
+                faces=cv2.resize(faces,(90,90))
+                print(np.argmax(loaded_model.predict(faces.reshape(1,90,90,1)),axis=-1))
+                a=np.argmax(loaded_model.predict(faces.reshape(1,90,90,1)),axis=-1)
+            
+                cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                if(a==1):
+                    cv2.putText(frame,"Male",(x-5,y-5),cv2.FONT_HERSHEY_PLAIN,1,(200,55,999),2)
+                else:
+                    cv2.putText(frame,"Female",(x-5,y-5),cv2.FONT_HERSHEY_PLAIN,1,(200,55,999),2)
+
+            # Display the resulting frame
+            cv2.putText(frame,"press q to close webcam",(10,10),cv2.FONT_HERSHEY_PLAIN,1,(255,0,0),2)
+            cv2.imshow('Webcame facedetection', frame)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        # When everything is done, release the capture
+        video_capture.release()
+        cv2.destroyAllWindows()
 
 
 def back(frm):
@@ -124,10 +153,10 @@ def welcomeAdmin():
     use_image_btn=Button(login_frm,width=width_of_btn,height=h,command=lambda:use_image(login_frm),font=('',12,'bold'),text='Use Image',bd=5)
     use_image_btn.place(x=500,y=100)
 
-    use_video_btn=Button(login_frm,width=width_of_btn,height=h,command=lambda:use_video(login_frm),font=('',12,'bold'),text='Use Video',bd=5)
+    use_video_btn=Button(login_frm,width=width_of_btn,height=h,command=lambda:use_video(),font=('',12,'bold'),text='Use Video',bd=5)
     use_video_btn.place(x=500,y=200)
 
-    web_cam_btn=Button(login_frm,width=width_of_btn,height=h,command=lambda:use_webcam(login_frm),font=('',12,'bold'),text='Use Webcam',bd=5)
+    web_cam_btn=Button(login_frm,width=width_of_btn,height=h,command=use_webcam,font=('',12,'bold'),text='Use Webcam',bd=5)
     web_cam_btn.place(x=500,y=300)
 
 #  login
