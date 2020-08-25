@@ -29,9 +29,29 @@ root.resizable(width=False,height=False)
 lbl_head=Label(root,bg='orange',text='Gender Prediction',font=('verdna',45,'bold'))
 lbl_head.pack(side='top',anchor='c')
 
+#------------------------------------------------------------------------------------------------------------------------------------#
+def use_video(frm):
+    h=3
+    login_frm=Frame(root,bg=bgclr)
+    login_frm.place(x=0,y=100,width=root.winfo_width(),height=root.winfo_height())
 
-def use_video():
-    print("wait for it")
+    lbl_user=Label(login_frm,bg=bgclr,font=('',15,''),fg='green',text='Welcome:Admin')
+    lbl_user.place(x=10,y=100)
+
+    back_btn=Button(login_frm,width=15,command=lambda:back(login_frm),font=('',12,'bold'),text='Back',bd=5)
+    back_btn.place(relx=.85,y=100)
+
+    
+    entry_browse=Entry(root,font=('cambria',20),bg='dark olive green',fg='white',bd=5)
+    entry_browse.place(x=500,y=170)
+    
+       
+    browse_btn=Button(login_frm,width=20,height=h,command=lambda:browse_video(entry_browse,login_frm),font=('',12,'bold'),text='Browse',bd=5,bg='orange')
+    browse_btn.place(x=400,y=200)
+    
+    detect_btn=Button(login_frm,width=20,height=h,command=lambda:Detect_vid(entry_browse,login_frm),font=('',12,'bold'),text='Detect',bd=5,bg='orange')
+    detect_btn.place(x=700,y=200)
+#------------------------------------------------------------------------------------------------------------------------------------#
 
 def use_image(frm):
     h=3
@@ -51,10 +71,10 @@ def use_image(frm):
     detect_btn=Button(login_frm,width=20,height=h,command=lambda:Detect(dir_path,login_frm),font=('',12,'bold'),text='Detect',bd=5,bg='orange')
     detect_btn.place(x=700,y=200)
 
-
+#------------------------------------------------------------------------------------------------------------------------------------#
 def use_webcam():
 
-        faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+        faceCascade = cv2.CascadeClassifier('classifier/haarcascade_frontalface_default.xml')
 
         video_capture = cv2.VideoCapture(0)
 
@@ -63,7 +83,7 @@ def use_webcam():
             ret, frame = video_capture.read()
 
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faceDetect=cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+            faceDetect=cv2.CascadeClassifier('classifier/haarcascade_frontalface_default.xml')
             faces = faceDetect.detectMultiScale(gray)
             for (x,y,w,h) in faces:
                 faces=gray[y:y+h,x:x+w]
@@ -87,13 +107,43 @@ def use_webcam():
         # When everything is done, release the capture
         video_capture.release()
         cv2.destroyAllWindows()
+#------------------------------------------------------------------------------------------------------------------------------------#
+def welcomeAdmin():
+    width_of_btn=30
+    h=4
+    login_frm=Frame(root,bg=bgclr)
+    login_frm.place(x=0,y=100,width=root.winfo_width(),height=root.winfo_height())
 
+    lbl_user=Label(login_frm,bg=bgclr,font=('',15,''),fg='green',text='Welcome:Admin')
+    lbl_user.place(x=10,y=100)
+
+    logout_btn=Button(login_frm,width=15,command=lambda:logout(login_frm),font=('',12,'bold'),text='Logout',bd=5)
+    logout_btn.place(relx=.85,y=100)
+
+    use_image_btn=Button(login_frm,width=width_of_btn,height=h,command=lambda:use_image(login_frm),font=('',12,'bold'),text='Use Image',bd=5)
+    use_image_btn.place(x=500,y=100)
+
+    use_video_btn=Button(login_frm,width=width_of_btn,height=h,command=lambda:use_video(login_frm),font=('',12,'bold'),text='Use Video',bd=5)
+    use_video_btn.place(x=500,y=200)
+
+    web_cam_btn=Button(login_frm,width=width_of_btn,height=h,command=use_webcam,font=('',12,'bold'),text='Use Webcam',bd=5)
+    web_cam_btn.place(x=500,y=300)
+
+
+#------------------------------------------------------------------------------------------------------------------------------------#
 
 def back(frm):
     frm.destroy()
     welcomeAdmin()    
-    
+ #------------------------------------------------------------------------------------------------------------------------------------#   
+def browse_video(entry_browse,login_frm):
+    global dir_path
+    dir_path=filedialog.askopenfilename()
+    entry_browse.insert(0,dir_path)
 
+
+
+#------------------------------------------------------------------------------------------------------------------------------------#
     #function for browse button
 def browse(login_frm):
     global dir_path
@@ -104,9 +154,44 @@ def browse(login_frm):
     label=Label(login_frm,image=tkimage)
     label.image=tkimage
     label.place(x=300,y=400)
-    
-    
+ #------------------------------------------------------------------------------------------------------------------------------------#   
+def Detect_vid(entry_browse,login_frm):
+    print("wait")
+    faceCascade = cv2.CascadeClassifier('classifier/haarcascade_frontalface_default.xml')
+    dir_path=entry_browse.get()
+    video_capture = cv2.VideoCapture(dir_path)
 
+    while True:
+        # Capture frame-by-frame
+        ret, frame = video_capture.read()
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faceDetect=cv2.CascadeClassifier('classifier/haarcascade_frontalface_default.xml')
+        faces = faceDetect.detectMultiScale(gray)
+        for (x,y,w,h) in faces:
+            faces=gray[y:y+h,x:x+w]
+            faces=cv2.resize(faces,(90,90))
+            # print(np.argmax(loaded_model.predict(faces.reshape(1,90,90,1)),axis=-1))
+            a=np.argmax(loaded_model.predict(faces.reshape(1,90,90,1)),axis=-1)
+            # a=1
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            if(a==1):
+                cv2.putText(frame,"Male",(x-5,y-5),cv2.FONT_HERSHEY_PLAIN,1,(255,0,0),2)
+            else:
+                cv2.putText(frame,"Female",(x-5,y-5),cv2.FONT_HERSHEY_PLAIN,1,(255,0,0),2)
+
+        # Display the resulting frame
+        cv2.putText(frame,"press q to close webcam",(10,10),cv2.FONT_HERSHEY_PLAIN,1,(255,0,0),2)
+        cv2.imshow('Video facedetection', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # When everything is done, release the capture
+    video_capture.release()
+    cv2.destroyAllWindows()
+
+#------------------------------------------------------------------------------------------------------------------------------------#
     
 def Detect(dir_path,login_frm):
 
@@ -115,7 +200,7 @@ def Detect(dir_path,login_frm):
     img=cv2.imread(dir_path)
     
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    faceDetect=cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    faceDetect=cv2.CascadeClassifier('classifier/haarcascade_frontalface_default.xml')
     faces = faceDetect.detectMultiScale(gray)
     for (x,y,w,h) in faces:
         face=gray[y:y+h,x:x+w]
@@ -137,27 +222,8 @@ def Detect(dir_path,login_frm):
         label.place(x=800,y=400)
 
       
+#------------------------------------------------------------------------------------------------------------------------------------#
 
-def welcomeAdmin():
-    width_of_btn=30
-    h=4
-    login_frm=Frame(root,bg=bgclr)
-    login_frm.place(x=0,y=100,width=root.winfo_width(),height=root.winfo_height())
-
-    lbl_user=Label(login_frm,bg=bgclr,font=('',15,''),fg='green',text='Welcome:Admin')
-    lbl_user.place(x=10,y=100)
-
-    logout_btn=Button(login_frm,width=15,command=lambda:logout(login_frm),font=('',12,'bold'),text='Logout',bd=5)
-    logout_btn.place(relx=.85,y=100)
-
-    use_image_btn=Button(login_frm,width=width_of_btn,height=h,command=lambda:use_image(login_frm),font=('',12,'bold'),text='Use Image',bd=5)
-    use_image_btn.place(x=500,y=100)
-
-    use_video_btn=Button(login_frm,width=width_of_btn,height=h,command=lambda:use_video(),font=('',12,'bold'),text='Use Video',bd=5)
-    use_video_btn.place(x=500,y=200)
-
-    web_cam_btn=Button(login_frm,width=width_of_btn,height=h,command=use_webcam,font=('',12,'bold'),text='Use Webcam',bd=5)
-    web_cam_btn.place(x=500,y=300)
 
 #  login
 def home():
@@ -183,8 +249,7 @@ def home():
     rst_btn=Button(login_frm,command=lambda:reset(ent_user,ent_pass),text='reset',bd=5,font=('',12,'bold'))
     rst_btn.place(x=590,y=305)
     
-    
-    
+#------------------------------------------------------------------------------------------------------------------------------------#
 
 def reset(e1,e2,e3=None,e4=None):
     u=e1.get()
@@ -197,7 +262,7 @@ def reset(e1,e2,e3=None,e4=None):
         m=e4.get()
         e3.delete(0,len(e))
         e4.delete(0,len(m))
-
+#------------------------------------------------------------------------------------------------------------------------------------#
 def login(frm,e1,e2):
     u=e1.get()
     p=e2.get()
@@ -210,12 +275,12 @@ def login(frm,e1,e2):
             welcomeAdmin()
         else:
             msg.showerror('Login Failed','Invalid username or password')        
-            
+ #------------------------------------------------------------------------------------------------------------------------------------#           
 def logout(frm):
     frm.destroy()
     home()
 
-
+#------------------------------------------------------------------------------------------------------------------------------------#
 
 
 
