@@ -6,20 +6,20 @@ from PIL import Image,ImageTk,ImageDraw
 import cv2
 import numpy as np
 from tensorflow.keras.models import model_from_json
-
+#---------------------------------------------------------------------------------------------------------------------------------#
 # load json and create model
-json_file = open('model.json', 'r')
+json_file = open('E:/PyAndML/Project/ML_project/Gender_prediction/model.json', 'r')
 loaded_model_json = json_file.read()
 json_file.close()
 loaded_model = model_from_json(loaded_model_json)
 # load weights into new model
-loaded_model.load_weights("model.h5")
+loaded_model.load_weights("E:/PyAndML/Project/ML_project/Gender_prediction/model.h5")
 print("Loaded model from disk")
  
 # ecompile loaded model
 loaded_model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-
+#------------------------------------------------------------------------------------------------------------------------------------#
 root=Tk()
 bgclr='powder blue'
 root.state('zoomed')
@@ -29,6 +29,78 @@ root.resizable(width=False,height=False)
 lbl_head=Label(root,bg='orange',text='Gender Prediction',font=('verdna',45,'bold'))
 lbl_head.pack(side='top',anchor='c')
 
+flag=False
+#-------------------------------------------------------------------------------------------------------------------------------------#
+
+def show_frame():
+    clf=cv2.CascadeClassifier('E:/PyAndML/DL lecture/DL/dataset/haar/haarcascade_frontalface_default.xml')
+    _, frame = cap.read()
+    cv2image = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+    gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY) 
+    faces=clf.detectMultiScale(gray,1.3,7)
+    for x,y,w,h in faces:
+        if(flag==True):
+            faces=gray[y:y+h,x:x+w]
+            faces=cv2.resize(faces,(90,90))
+            
+            a=np.argmax(loaded_model.predict(faces.reshape(1,90,90,1)),axis=-1)      
+            cv2.rectangle(cv2image,(x,y),(x+w,y+h),(255,0,0),2)
+            if(a==1):
+                cv2.putText(cv2image,"Male",(x-5,y-5),cv2.FONT_HERSHEY_PLAIN,1,(255,0,0),2)
+            else:
+                cv2.putText(cv2image,"Female",(x-5,y-5),cv2.FONT_HERSHEY_PLAIN,1,(255,0,0),2)
+    img = Image.fromarray(cv2image)
+    imgtk = ImageTk.PhotoImage(image=img)
+    lmain.imgtk = imgtk
+    lmain.configure(image=imgtk)
+    lmain.after(10, show_frame) #calls show_frame after 10 mills
+
+    
+def start():
+    global lmain,cap,lmain,imageFrame
+    cap = cv2.VideoCapture(0)
+    imageFrame =Frame(root,width=700, height=500,bd=10,bg='green')
+    lmain =Label(imageFrame)
+    lmain.grid(row=0, column=0)
+    imageFrame.place(relx=.25,rely=.15)
+    Button(imageFrame,command=lambda:startface(),text='detect face',font=('',20,'bold'),bd=10,width=12).place(relx=.1,rely=.9)
+    Button(imageFrame,command=lambda:stopface(),text='stop detecting',font=('',20,'bold'),bd=10,width=12).place(relx=.5,rely=.9)
+    
+    show_frame()
+
+def stop():
+    cap.release()
+    lmain.destroy()
+    imageFrame.destroy()
+
+def startface():
+    global flag
+    flag=True
+
+def stopface():
+    global flag
+    flag=False
+    
+#------------------------------------------------------------------------------------------------------------------------------------#
+def use_webcam(frm):
+    h=3
+    login_frm=Frame(root,bg=bgclr)
+    login_frm.place(x=0,y=100,width=root.winfo_width(),height=root.winfo_height())
+
+    lbl_user=Label(login_frm,bg=bgclr,font=('',15,''),fg='green',text='Welcome:Admin')
+    lbl_user.place(x=10,y=100)
+
+    back_btn=Button(login_frm,width=15,command=lambda:back(login_frm),font=('',12,'bold'),text='Back',bd=5)
+    back_btn.place(relx=.85,y=100)
+       
+       
+    start_cam_btn=Button(login_frm,command=lambda:start(),text='start camera',font=('',20,'bold'),bd=10)
+    start_cam_btn.place(x=400,y=600)
+    
+    stop_btn=Button(login_frm,command=lambda:stop(),text='stop camera',font=('',20,'bold'),bd=10)
+    stop_btn.place(x=700,y=00)
+
+    
 #------------------------------------------------------------------------------------------------------------------------------------#
 def use_video(frm):
     h=3
@@ -51,8 +123,9 @@ def use_video(frm):
     
     detect_btn=Button(login_frm,width=20,height=h,command=lambda:Detect_vid(entry_browse,login_frm),font=('',12,'bold'),text='Detect',bd=5,bg='orange')
     detect_btn.place(x=700,y=200)
-#------------------------------------------------------------------------------------------------------------------------------------#
 
+        
+#------------------------------------------------------------------------------------------------------------------------------------#
 def use_image(frm):
     h=3
     login_frm=Frame(root,bg=bgclr)
@@ -72,42 +145,7 @@ def use_image(frm):
     detect_btn.place(x=700,y=200)
 
 #------------------------------------------------------------------------------------------------------------------------------------#
-def use_webcam():
 
-        faceCascade = cv2.CascadeClassifier('classifier/haarcascade_frontalface_default.xml')
-
-        video_capture = cv2.VideoCapture(0)
-
-        while True:
-            # Capture frame-by-frame
-            ret, frame = video_capture.read()
-
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faceDetect=cv2.CascadeClassifier('classifier/haarcascade_frontalface_default.xml')
-            faces = faceDetect.detectMultiScale(gray)
-            for (x,y,w,h) in faces:
-                faces=gray[y:y+h,x:x+w]
-                faces=cv2.resize(faces,(90,90))
-                print(np.argmax(loaded_model.predict(faces.reshape(1,90,90,1)),axis=-1))
-                a=np.argmax(loaded_model.predict(faces.reshape(1,90,90,1)),axis=-1)
-            
-                cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                if(a==1):
-                    cv2.putText(frame,"Male",(x-5,y-5),cv2.FONT_HERSHEY_PLAIN,1,(200,55,999),2)
-                else:
-                    cv2.putText(frame,"Female",(x-5,y-5),cv2.FONT_HERSHEY_PLAIN,1,(200,55,999),2)
-
-            # Display the resulting frame
-            cv2.putText(frame,"press q to close webcam",(10,10),cv2.FONT_HERSHEY_PLAIN,1,(255,0,0),2)
-            cv2.imshow('Webcame facedetection', frame)
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        # When everything is done, release the capture
-        video_capture.release()
-        cv2.destroyAllWindows()
-#------------------------------------------------------------------------------------------------------------------------------------#
 def welcomeAdmin():
     width_of_btn=30
     h=4
@@ -126,7 +164,7 @@ def welcomeAdmin():
     use_video_btn=Button(login_frm,width=width_of_btn,height=h,command=lambda:use_video(login_frm),font=('',12,'bold'),text='Use Video',bd=5)
     use_video_btn.place(x=500,y=200)
 
-    web_cam_btn=Button(login_frm,width=width_of_btn,height=h,command=use_webcam,font=('',12,'bold'),text='Use Webcam',bd=5)
+    web_cam_btn=Button(login_frm,width=width_of_btn,height=h,command=lambda:use_webcam(login_frm),font=('',12,'bold'),text='Use Webcam',bd=5)
     web_cam_btn.place(x=500,y=300)
 
 
